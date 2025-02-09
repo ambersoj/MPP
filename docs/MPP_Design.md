@@ -1,99 +1,53 @@
-# **MPP Design Document**
-### *Microservices Processing Platform (MPP)*
-
-## 📌 **1. Overview**
-MPP is a modular, microservices-based system for **handling commands, executing tasks, and extending functionality** via user-defined services and commands. It uses **UNIX sockets** for IPC and supports **dynamic command execution**.
-
-## 🔥 **2. Core Features**
-- **Command Processing**: User-defined commands processed dynamically.
-- **Microservices Architecture**: Decoupled components communicating via sockets.
-- **Custom Services**: Plug-and-play user-defined services.
-- **Distributed Execution**: Future roadmap to support MPP mesh networks.
-- **Lightweight DSL**: Simple **domain-specific language** for automation.
-
-## 🏗 **3. System Architecture**
-### **Core Components**
-1. **CoreService** – Manages commands, forwards to handlers.
-2. **NetService** – Handles network-related commands.
-3. **CommandProcessor** – Registry for command execution.
-4. **SocketManager** – Abstracts UNIX socket operations.
-5. **Logger** – Centralized logging system.
-
-### **Interaction Flow**
-```plaintext
-Client → [MPP Core] → Command Processor → (Executes Command / Dispatches to Service)
-
-
 MPP Design Document
-1. Overview
+1.  Overview
 
-The Modular Processing Platform (MPP) is a microservices-based system that allows users to define, execute, and extend commands dynamically. It is designed with super modularity, super extensibility, and super scalability in mind.
+    The Modular Processing Platform (MPP) is a microservices-based system that allows users to define, execute, and extend commands dynamically. It is designed with super modularity, super extensibility, and super scalability in mind.
 
-The MPP runs with UNIX sockets.  The idea behind this decision is that it allows the MPP user to leverage the services offered by the OS including multithreading, memory mangement, file handling, ethernet interface handling, sockets and tty/pty.  Users of MPP have lots of freedom and power.  All commands in the MPP ecosystem are crafted in open source code, either c/c++ or bash scripts.  Any node of an MPP system can communicate with another node through IPC and unix sockets, or TCP.  Nodes may perform ftp operations.  Commands are executed anonymously.  MPP implements a Domain Specific Language offering very rich possibilties for an MPP user.
+    The MPP runs with UNIX sockets.  The idea behind this decision is that it allows the MPP user to leverage the services offered by the OS including multithreading, memory mangement, file handling, ethernet interface handling, sockets and tty/pty.  Users of MPP have lots of freedom and power.  All commands in the MPP ecosystem are crafted in open source code, either c/c++ or bash scripts.  Any node of an MPP system can communicate with another node through IPC and unix sockets, or TCP.  Nodes may perform ftp operations.  Commands are executed anonymously.  MPP implements a Domain Specific Language offering very rich possibilties for an MPP user.
 
-2. Core Features
+2.  Definition Checklist
 
-    Command Processing: User-defined commands processed dynamically.
-    Microservices: Independent modules handling commands, networking, and execution.
-    Inter-Process Communication (IPC): Using UNIX domain sockets for efficient message passing.
-    Event Logging: Structured logs for debugging and audit trails.
+    Every new component must be fully defined before implementation.  Each component must have:
 
-3. Command Processing (Detailed Design)
-3.1 Overview
+    - UML class diagram
+    - Interface definition clearly defining APIs or contracts
+    - Usage scenarios complete with UML sequence diagrams
+    - Tests defined before implementation
+    - Configuration consideratons addressed
+    - Failure handling plan, how a component handles errors
 
-The Command Processing System is responsible for:
 
-    Receiving commands through UNIX sockets.
+3.  Command Processing System (CPS)
+
+    The CPS is unique compared to most software applications.  MPP only has 7 built-in commands: quit, q, exit, EXC, help, h, ?.  Every other command is in the form of a c++ program.  Commands are copiled to a .so format and loaded and ran by MPP.  Other user input to the MPP can be in the form of MPP's domain specific language (DSL).  The DSL employs concepts such as a software grammar, parsing techniques, functional programming, handling input and output between commands, handling state, functional programming, pipes, scripting and more.
+
+    The CPS is oblivious to the identity and type of commands it handles.  
+
+    - Receiving commands through UNIX sockets.
     Parsing and validating commands.
     Executing the appropriate registered command handler.
 
-3.2 Components
+4.  Domain Specific Language (DSL)
 
-    CommandProcessor
-        Stores registered commands in a map.
-        Validates and dispatches commands to their respective handlers.
-        Logs execution steps.
+    MPP has a concept of its Ethos and Character (EandC).  It's a collection of things that go hand-in-hand to acheive an overall productive and free work environment for serious computer users.  The MPP EandC always defers to freedom and always defers consequences and responsibilities to the MPP user.  MPP provides complete freedom.  MPP will never impose a restriction on an MPP user in anyway.  For the purpose of creating microservices the MPP will provide some services like memory management (mpp_maloc()), plug-in capability, context loading.
+    
+    - Each component has a ./commands default directory which will be checked first by MPP. 
+    - MPP has some linux-like features such as command path configuration and file organization and scripting capabilities.
+    - The DSL will be a formally defined software language that's small and will lend itself well to user's who enjoy powerful command line capabilites and who will consider programs made with the DSL to be precious.
+    - ftp will be common for an MPP user as nodes can communicate through IPC or TCP.  MPP can be an extensive network or just a single node.
 
-    Command Interface (ICommand)
-        Defines the execute() method implemented by all concrete commands.
+    Is there a need for a core, partner?  Could core be optional, for users who want to extend with their own microservices that need an MPP service such as mpp_maloc().  Otherwise components can couple directly and use capabilities (CAPS) that are offered by various components.  Tasks may be delegated to remote components on different machines (IP addresses).
 
-    Concrete Commands
-        Implement ICommand and provide custom execution logic.
-        Example: StartCommand, StopCommand.
+5.  Development Process
 
-    SocketManager
-        Handles network communication between services.
-        Receives raw command input and forwards it to CommandProcessor.
+    MPP arranged as:
+    - VSCode project /usr/local/unix
+    - Makefile build system
+    - Unit tests run through Makefile
+    - Integration tests are script-based currently
+    - Using TDD framework catch2
+    - git repo https://github.com/ambersoj/MPP
 
-3.3 Command Lifecycle
+    See new component 2. Definition Checklist above.
+    The git pull request system is utiilized.  Git tracks code as well a the written and graphic documetation such as the MDD and UML diagrams.
 
-📌 How a Command Flows Through MPP
-
-    User sends a command (e.g., "start") through the command socket.
-    SocketManager reads the command and forwards it to CommandProcessor.
-    CommandProcessor checks if the command exists in the command registry.
-        ✅ If exists → Executes the registered handler.
-        ❌ If unknown → Logs an error.
-    The Concrete Command executes its logic (e.g., StartCommand initiates network monitoring).
-    Logs are recorded for debugging & monitoring.
-
-3.4 Sequence Diagram
-
-📌 The UML Sequence Diagram will visualize the steps above.
-
-    User sends "start" command.
-    CommandProcessor validates and executes the command.
-    StartCommand performs its action and logs the event.
-
-(Sequence Diagram will be sent in the next step!)
-4. Implementation Plan
-
-📌 Next Steps 1️⃣ Review this design and align with UML.
-2️⃣ Implement Unit Tests before writing implementation code.
-3️⃣ Finalize UML diagrams and sequence flow.
-4️⃣ Start structured code implementation.
-Final Review Checklist
-
-✅ Does the Command Processing design match UML?
-✅ Are all command lifecycle steps clear?
-✅ Does the design support extensibility for future commands?
