@@ -27,7 +27,9 @@ Client → [MPP Core] → Command Processor → (Executes Command / Dispatches t
 MPP Design Document
 1. Overview
 
-The Modular Processing Platform (MPP) is a microservices-based system that allows users to define, execute, and extend commands dynamically. It is designed with modularity, extensibility, and scalability in mind.
+The Modular Processing Platform (MPP) is a microservices-based system that allows users to define, execute, and extend commands dynamically. It is designed with super modularity, super extensibility, and super scalability in mind.
+
+The MPP runs with UNIX sockets.  The idea behind this decision is that it allows the MPP user to leverage the services offered by the OS including multithreading, memory mangement, file handling, ethernet interface handling, sockets and tty/pty.  Users of MPP have lots of freedom and power.  All commands in the MPP ecosystem are crafted in open source code, either c/c++ or bash scripts.  Any node of an MPP system can communicate with another node through IPC and unix sockets, or TCP.  Nodes may perform ftp operations.  Commands are executed anonymously.  MPP implements a Domain Specific Language offering very rich possibilties for an MPP user.
 
 2. Core Features
 
