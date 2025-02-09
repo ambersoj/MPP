@@ -1,0 +1,67 @@
+
+---
+
+### **📥 UML: `uml/MPP_Architecture.puml`**
+📂 **File: `uml/MPP_Architecture.puml`**
+```puml
+@startuml
+title MPP Architecture
+
+package "Core" {
+    class CoreService {
+        +start()
+        +listenForCommands()
+    }
+
+    class CommandProcessor {
+        +registerCommand(name, ICommand)
+        +processCommand(input)
+    }
+
+    CoreService --> CommandProcessor
+}
+
+package "Networking" {
+    class NetService {
+        +start()
+        +listenForCommands()
+    }
+
+    NetService --> CoreService
+}
+
+package "Utilities" {
+    class Logger {
+        +log(message)
+        +getInstance()
+    }
+
+    class SocketManager {
+        +startListening()
+        +acceptConnection()
+        +sendMessage()
+        +receiveMessage()
+    }
+
+    Logger --> SocketManager
+    CoreService --> Logger
+    NetService --> Logger
+}
+
+interface ICommand {
+    +execute()
+}
+
+class StartCommand {
+    +execute()
+}
+
+class StopCommand {
+    +execute()
+}
+
+CommandProcessor --> ICommand
+ICommand <|-- StartCommand
+ICommand <|-- StopCommand
+
+@enduml

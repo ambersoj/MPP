@@ -1,0 +1,26 @@
+[2025-02-08 21:10:27] [DEBUG] Registering commands...
+[2025-02-08 21:10:27] [DEBUG] Registered commands:
+[2025-02-08 21:10:27] [DEBUG] - stop
+[2025-02-08 21:10:27] [DEBUG] - start
+[2025-02-08 21:10:27] MPP-Core starting...
+[2025-02-08 21:10:28] MPP-Net starting...
+[2025-02-08 21:10:29] Received command: start
+
+[2025-02-08 21:10:29] [CORE] Processing command: 'start'
+[2025-02-08 21:10:29] [DEBUG] Commands registered at runtime:
+[2025-02-08 21:10:29] [DEBUG] - 'stop'
+[2025-02-08 21:10:29] [DEBUG] - 'start'
+[2025-02-08 21:10:29] [DEBUG] Found command in registry: 'start'
+[2025-02-08 21:10:29] [DEBUG] Command object exists, executing now...
+[2025-02-08 21:10:29] [CORE] Starting packet capture...
+[2025-02-08 21:10:29] [DEBUG] Execution complete.
+[2025-02-08 21:10:30] Received command: stop
+
+[2025-02-08 21:10:30] [CORE] Processing command: 'stop'
+[2025-02-08 21:10:30] [DEBUG] Commands registered at runtime:
+[2025-02-08 21:10:30] [DEBUG] - 'stop'
+[2025-02-08 21:10:30] [DEBUG] - 'start'
+[2025-02-08 21:10:30] [DEBUG] Found command in registry: 'stop'
+[2025-02-08 21:10:30] [DEBUG] Command object exists, executing now...
+[2025-02-08 21:10:30] [CORE] Stopping packet capture...
+[2025-02-08 21:10:30] [DEBUG] Execution complete.
