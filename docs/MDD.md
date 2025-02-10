@@ -1,53 +1,144 @@
 MPP Design Document
-1.  Overview
+1. Overview
+1.1 Purpose
 
-    The Modular Processing Platform (MPP) is a microservices-based system that allows users to define, execute, and extend commands dynamically. It is designed with super modularity, super extensibility, and super scalability in mind.
+The Modular Packet Processor (MPP) is a UNIX-based microservice-driven framework for network packet capture, processing, and command execution. It enables plug-and-play extensibility, user-defined commands, and distributed MPP nodes.
+1.2 Key Features
 
-    The MPP runs with UNIX sockets.  The idea behind this decision is that it allows the MPP user to leverage the services offered by the OS including multithreading, memory mangement, file handling, ethernet interface handling, sockets and tty/pty.  Users of MPP have lots of freedom and power.  All commands in the MPP ecosystem are crafted in open source code, either c/c++ or bash scripts.  Any node of an MPP system can communicate with another node through IPC and unix sockets, or TCP.  Nodes may perform ftp operations.  Commands are executed anonymously.  MPP implements a Domain Specific Language offering very rich possibilties for an MPP user.
+    Microservice Architecture: Independent modules for core logic, network capture, and logging.
+    User-Defined Commands: Dynamically register and execute custom commands.
+    UNIX Socket Communication: Efficient IPC for low-latency command exchange.
+    Extensibility: Supports user-developed services and plugins.
 
-2.  Definition Checklist
+2. Core Features
+2.1 Command Processing
+2.1.1 Overview
 
-    Every new component must be fully defined before implementation.  Each component must have:
+MPP enables the dynamic execution of user-defined commands via a modular Command Processor. Commands can be registered at runtime and invoked over IPC.
+2.1.2 Design
 
-    - UML class diagram
-    - Interface definition clearly defining APIs or contracts
-    - Usage scenarios complete with UML sequence diagrams
-    - Tests defined before implementation
-    - Configuration consideratons addressed
-    - Failure handling plan, how a component handles errors
+    Implements the Command Pattern with:
+        ICommand (Abstract Interface)
+        Concrete Command Implementations (StartCommand, StopCommand, etc.)
+        Command Processor (Registry & Dispatcher)
+    Command execution is asynchronous, supporting distributed processing.
 
+2.1.3 Implementation Checklist
 
-3.  Command Processing System (CPS)
+Define ICommand interface
+Implement command registry
+Enable runtime command registration
+IPC-based command execution via UNIX sockets
 
-    The CPS is unique compared to most software applications.  MPP only has 7 built-in commands: quit, q, exit, EXC, help, h, ?.  Every other command is in the form of a c++ program.  Commands are copiled to a .so format and loaded and ran by MPP.  Other user input to the MPP can be in the form of MPP's domain specific language (DSL).  The DSL employs concepts such as a software grammar, parsing techniques, functional programming, handling input and output between commands, handling state, functional programming, pipes, scripting and more.
+    Logging and debugging support
 
-    The CPS is oblivious to the identity and type of commands it handles.  
+2.2 Network Packet Capture
+2.2.1 Overview
 
-    - Receiving commands through UNIX sockets.
-    Parsing and validating commands.
-    Executing the appropriate registered command handler.
+MPP integrates libpcap for network traffic monitoring. It captures, filters, and processes packets dynamically.
+2.2.2 Design
 
-4.  Domain Specific Language (DSL)
+    Core Service initializes capture threads.
+    Filter Module applies user-defined packet rules.
+    Processing Pipeline supports real-time analysis and exporting.
 
-    MPP has a concept of its Ethos and Character (EandC).  It's a collection of things that go hand-in-hand to acheive an overall productive and free work environment for serious computer users.  The MPP EandC always defers to freedom and always defers consequences and responsibilities to the MPP user.  MPP provides complete freedom.  MPP will never impose a restriction on an MPP user in anyway.  For the purpose of creating microservices the MPP will provide some services like memory management (mpp_maloc()), plug-in capability, context loading.
-    
-    - Each component has a ./commands default directory which will be checked first by MPP. 
-    - MPP has some linux-like features such as command path configuration and file organization and scripting capabilities.
-    - The DSL will be a formally defined software language that's small and will lend itself well to user's who enjoy powerful command line capabilites and who will consider programs made with the DSL to be precious.
-    - ftp will be common for an MPP user as nodes can communicate through IPC or TCP.  MPP can be an extensive network or just a single node.
+2.2.3 Implementation Checklist
 
-    Is there a need for a core, partner?  Could core be optional, for users who want to extend with their own microservices that need an MPP service such as mpp_maloc().  Otherwise components can couple directly and use capabilities (CAPS) that are offered by various components.  Tasks may be delegated to remote components on different machines (IP addresses).
+Integrate libpcap for packet capture
+Develop filter and processing modules
+Enable real-time data streaming
 
-5.  Development Process
+    Support saving and exporting packet logs
 
-    MPP arranged as:
-    - VSCode project /usr/local/unix
-    - Makefile build system
-    - Unit tests run through Makefile
-    - Integration tests are script-based currently
-    - Using TDD framework catch2
-    - git repo https://github.com/ambersoj/MPP
+2.3 Interprocess Communication (IPC)
+2.3.1 Overview
 
-    See new component 2. Definition Checklist above.
-    The git pull request system is utiilized.  Git tracks code as well a the written and graphic documetation such as the MDD and UML diagrams.
+MPP components communicate via UNIX domain sockets, ensuring low-latency command processing and service orchestration.
+2.3.2 Design
 
+    SocketManager abstracts UNIX socket interactions.
+    MPP-Core listens for incoming commands.
+    MPP-Net processes and forwards network-related tasks.
+
+2.3.3 Implementation Checklist
+
+Establish reliable UNIX socket communication
+Develop a unified IPC message format
+Ensure robust error handling and recovery
+
+    Benchmark IPC performance for optimization
+
+3. System Architecture
+3.1 High-Level Architecture
+
++------------------------+
+|   MPP-Core            |  
+|  (Command Processing) |  
++------------------------+
+         |
+         v
++------------------------+
+|   MPP-Net             |  
+|  (Packet Capture)     |  
++------------------------+
+         |
+         v
++------------------------+
+|   MPP-Logger          |  
+|  (Logging & Debugging)|  
++------------------------+
+
+3.2 Component Breakdown
+Component	Description
+MPP-Core	Central processor for command execution.
+MPP-Net	Handles network packet capture and filtering.
+MPP-Logger	Manages logging across all components.
+SocketManager	Manages UNIX sockets for IPC.
+4. Extensibility & Future Enhancements
+4.1 Plugin System
+
+    Enable user-defined services via dynamically loaded shared libraries (.so/.dylib).
+
+4.2 Distributed MPP Mesh
+
+    Support inter-node communication across multiple MPP instances.
+
+4.3 Web Interface
+
+    Implement a lightweight web UI for visualization and remote control.
+
+5. Development Process & Guidelines
+5.1 Code Standards
+
+    Follow Google C++ Style Guide.
+    Use RAII for resource management.
+    Ensure thread safety in concurrent operations.
+
+5.2 Git Workflow
+
+    Feature branches for all changes.
+    Pull requests with code reviews.
+    Automated unit tests before merging.
+
+5.3 Testing Strategy
+
+    Unit Testing: Catch2 framework for component tests.
+    Integration Testing: End-to-end system validation.
+    Performance Testing: Benchmark UNIX socket IPC latency.
+
+6. Change Log
+Date	Change Summary	Contributor
+2025-02-09	Initial structured draft	ChatGPT
+2025-02-09	Added command processing section	User
+2025-02-09	Refined system architecture	User
+Next Steps
+
+✅ Merge structured MDD into main branch.
+✅ Refine checklist and milestones for upcoming iterations.
+⬜ Begin structured implementation phase.
+📌 Notes
+
+    This document serves as a living design reference for MPP.
+    Updates should be versioned and reviewed before merging.
+
+End of Document
