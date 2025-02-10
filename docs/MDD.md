@@ -127,18 +127,60 @@ SocketManager	Manages UNIX sockets for IPC.
     Performance Testing: Benchmark UNIX socket IPC latency.
 
 6. Change Log
-Date	Change Summary	Contributor
-2025-02-09	Initial structured draft	ChatGPT
-2025-02-09	Added command processing section	User
+Date        Change Summary                      Contributor
+2025-02-09	Initial structured draft            ChatGPT
+2025-02-09	Added command processing section    User
 2025-02-09	Refined system architecture	User
-Next Steps
 
-✅ Merge structured MDD into main branch.
-✅ Refine checklist and milestones for upcoming iterations.
-⬜ Begin structured implementation phase.
-📌 Notes
 
-    This document serves as a living design reference for MPP.
-    Updates should be versioned and reviewed before merging.
+
+Appendix - Directory Structure
+
+Here’s the requested directory tree section:
+
+/MPP
+│── docs/               # 📄 Documentation
+│   ├── MDD.md   # Main design document
+│   ├── UML/            # UML diagrams
+│   └── README.md       # Project overview
+│
+│── src/                # 🖥️ Source code
+│   ├── core/           # MPP-Core service
+│   ├── net/            # MPP-Net service
+│   ├── ipc/            # IPC abstraction layer
+│   ├── commands/       # Command processing
+│   ├── logging/        # Logging module
+│   ├── utils/          # Utility functions
+│   └── main.cpp        # Entry point
+│
+│── include/            # 📎 Header files
+│   ├── core/
+│   ├── net/
+│   ├── ipc/
+│   ├── commands/
+│   ├── logging/
+│   └── utils/
+│
+│── tests/              # 🧪 Testing suite
+│   ├── unit/           # Unit tests
+│   ├── integration/    # Integration tests
+│   ├── benchmarks/     # Performance tests
+│   ├── Catch2/         # Catch2 framework
+│   └── test_runner.cpp # Test entry point
+│
+│── third_party/        # 📦 External dependencies
+│   ├── libpcap/        # Network packet capture
+│   ├── Catch2/         # Testing framework
+│   └── ZeroMQ/         # Alternative IPC library (optional)
+│
+│── scripts/            # 🛠️ Utility scripts
+│   ├── setup.sh        # Install dependencies
+│   ├── build.sh        # Build automation
+│   ├── run_tests.sh    # Run test suite
+│   └── integration_test.sh # System tests
+│
+│── Makefile            # ⚙️ Build system
+│── .gitignore          # 🚫 Git ignored files
+│── README.md           # 📖 Project overview
 
 End of Document
