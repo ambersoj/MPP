@@ -1,0 +1,14 @@
+@startuml
+interface ICommand {
+    +execute(input: istream, output: ostream)
+    +getCapabilities(): string
+}
+
+class CommandInvoker {
+    - ICommand command
+    +CommandInvoker(cmd: ICommand)
+    +execute(input: istream, output: ostream)
+}
+
+CommandInvoker --> ICommand : Uses
+@enduml
