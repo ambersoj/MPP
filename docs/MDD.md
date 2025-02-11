@@ -1,5 +1,41 @@
 # Modular Packet Processor (MPP) - Design Document
 
+- Modular Packet Processor (MPP) - Design Document
+  - **1. Overview**
+    - **1.1 Purpose**
+    - **1.2 Key Features \& Ethos**
+  - **2. Requirements \& Functional Specifications**
+    - **2.1 Functional Requirements**
+    - **2.2 Non-Functional Requirements**
+  - **3. MPP-Core: Command Processing Model**
+    - **3.1 Philosophy**
+    - **3.2 Built-in Commands**
+    - **3.3 Command Execution Model**
+      - **3.3.1 User-Defined Commands**
+      - **3.3.2 Command Interface (`ICommand`)**
+      - **3.3.3 Command Invocation and Execution**
+  - **4. Inter-Process Communication (IPC) in MPP**
+    - **4.1 IPC Mechanisms**
+      - **Supported IPC Mechanisms:**
+  - **5. Plugin \& Module System**
+    - **5.1 Dynamic Plugin Loading**
+      - **Plugin Management Interface:**
+    - **5.2 Plugin Execution Model**
+  - **6. Command Query \& Validation System**
+    - **6.1 `mpp --list-commands` (Command Discovery)**
+      - **Implementation:**
+      - **Test Considerations:**
+  - **7. Test \& Verification Plan**
+    - **7.1 Unit \& Integration Testing**
+    - **7.2 Test Setup \& Execution**
+  - **8. Development Priorities**
+  - **9. UML Diagrams**
+    - **9.1 Class Diagram for Command Execution**
+    - **9.2 Component Diagram for Plugin System**
+    - **9.3 Sequence Diagram for IPC Messaging**
+  - **10. Change Log \& Future Enhancements**
+
+
 ## **1. Overview**
 
 ### **1.1 Purpose**
@@ -62,7 +98,7 @@ User-defined commands form the core of MPP. These commands:
 - Follow a standardized interface.
 - Operate independently but can be pipelined together.
 
-#### **3.3.2 Command Interface (`ICommand`)
+#### **3.3.2 Command Interface (`ICommand`)**
 
 Each command must:
 - Accept **input and output streams** (`STDIN` / `STDOUT`).
@@ -94,128 +130,161 @@ public:
 };
 ```
 
-#### **3.3.4 Command Metadata & Capabilities (`getCapabilities()`)**
+---
 
-To make user-defined commands self-describing, each command must return **structured metadata** about its capabilities.
+## **4. Inter-Process Communication (IPC) in MPP**
 
-- **What input it accepts** (e.g., raw packets, text, structured data)
-- **What output it produces** (e.g., logs, modified packets, JSON)
-- **Any required arguments** (e.g., filters, capture options)
-- **Execution constraints** (e.g., needs root access, exclusive execution)
+### **4.1 IPC Mechanisms**
+MPP will support multiple **Inter-Process Communication (IPC) mechanisms** to facilitate communication between different components of the system. IPC will be abstracted using the **Strategy Pattern**, allowing users to configure the best IPC method for their use case.
 
-Example JSON-style metadata:
-```json
-{
-  "name": "filter.so",
-  "description": "Filters packets based on protocol",
-  "input_type": "network_packets",
-  "output_type": "filtered_packets",
-  "args": ["protocol"],
-  "execution_mode": "pipeline_compatible"
-}
-```
-
-This allows MPP to **dynamically query commands** for their capabilities, making command discovery and integration seamless.
-
-#### **3.3.5 Example Pipeline Execution**
-
-Commands work in a pipelined execution model similar to UNIX pipes (`|`). Example:
-
-```sh
-mpp start.so eth0 | filter.so "tcp" | log.so > capture.log
-```
-
-- `start.so` captures packets.
-- `filter.so` processes only TCP packets.
-- `log.so` writes the results to a log file.
-
-This model ensures **functional, stateless execution** and composability.
-
-## **3.3.6 Expanding `getCapabilities()` for Enhanced Command Discovery**
-
-As MPP evolves, the `getCapabilities()` function will play a crucial role in making commands **self-describing and dynamically discoverable**. To expand its usefulness, the function should:
-
-- **Support structured metadata queries** for runtime inspection.
-- **Allow MPP to list and validate available commands (`mpp --list-commands`)**.
-- **Provide compatibility checking for pipelining and execution.**
-
-### **Standardized JSON Metadata Schema**
-
-To ensure consistency, commands should return metadata in the following structure:
-
-```json
-{
-  "name": "filter.so",
-  "description": "Filters packets based on protocol",
-  "version": "1.0.0",
-  "input_type": ["network_packets"],
-  "output_type": ["filtered_packets"],
-  "args": [
-    {
-      "name": "protocol",
-      "type": "string",
-      "required": true,
-      "description": "Protocol to filter (e.g., tcp, udp, icmp)"
-    }
-  ],
-  "execution_mode": "pipeline_compatible",
-  "permissions": ["root_required"]
-}
-```
-
-### **Enhancing MPP with Query Capabilities**
-
-To leverage this metadata, MPP will include:
-
-- **Command Listing (`mpp --list-commands`)**
-  - Queries available `.so` commands and retrieves their `getCapabilities()` metadata.
-
-- **Capability Validation (`mpp --check-capabilities filter.so`)**
-  - Ensures a command can be pipelined with another before execution.
-
-- **Automatic Pipeline Validation**
-  - Uses `input_type` and `output_type` fields to ensure commands are chainable.
-
-### **C++ Implementation of `getCapabilities()`**
-
-The function will return a **JSON string** using a lightweight C++ JSON library such as `nlohmann/json`:
-
-```cpp
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
-class FilterCommand : public ICommand {
-public:
-    std::string getCapabilities() const override {
-        json capabilities = {
-            {"name", "filter.so"},
-            {"description", "Filters packets based on protocol"},
-            {"version", "1.0.0"},
-            {"input_type", {"network_packets"}},
-            {"output_type", {"filtered_packets"}},
-            {"args", json::array({
-                { {"name", "protocol"}, {"type", "string"}, {"required", true}, {"description", "Protocol to filter (e.g., tcp, udp, icmp)"} }
-            })},
-            {"execution_mode", "pipeline_compatible"},
-            {"permissions", {"root_required"}}
-        };
-        return capabilities.dump();
-    }
-};
-```
-
-This allows MPP to dynamically query command capabilities and enforce execution constraints.
+#### **Supported IPC Mechanisms:**
+- **UNIX Sockets** – Local communication between MPP components.
+- **Shared Memory** – High-speed data sharing for performance-critical tasks.
+- **Message Queues** – Reliable asynchronous communication.
+- **Named Pipes (FIFOs)** – Simple stream-based IPC.
 
 ---
 
-## **7. Change Log & Future Enhancements**
+## **5. Plugin & Module System**
 
-| Date       | Change Summary                                     | Contributor         |
-| ---------- | ------------------------------------------------- | ------------------- |
-| 2025-02-10 | Rewrote MDD structure with MPP philosophy         | Partner's Assistant |
-| 2025-02-10 | Added pipeline execution model                    | Partner's Assistant |
-| 2025-02-10 | Defined command metadata & capabilities           | Partner's Assistant |
-| 2025-02-11 | Added command execution model and interface       | Partner's Assistant |
-| 2025-02-11 | Added `getCapabilities()` metadata section        | Partner's Assistant |
-| 2025-02-11 | Expanded `getCapabilities()` with JSON schema & validation | Partner's Assistant |
+### **5.1 Dynamic Plugin Loading**
+MPP will allow users to create and load **custom plugins** using dynamically linked shared objects (`.so` files). This will allow users to extend MPP’s functionality without modifying the core system.
+
+#### **Plugin Management Interface:**
+
+```cpp
+class PluginManager {
+public:
+    void loadPlugin(const std::string& pluginPath);
+    void executePlugin(const std::string& commandName);
+};
+```
+
+### **5.2 Plugin Execution Model**
+- **Plugins must be compiled as shared objects (`.so` files)** and follow a standard execution interface.
+- **MPP will dynamically discover and load plugins at runtime**, executing them based on user commands.
+- **Error Handling:** If a plugin fails to load or execute, MPP will provide error messages but will not restrict the user’s ability to try again.
+
+---
+
+## **6. Command Query & Validation System**
+
+### **6.1 `mpp --list-commands` (Command Discovery)**
+
+MPP provides a way to **list all available commands** dynamically by scanning the commands directory (`/usr/local/mpp/commands/`). This allows users to see which commands are available for execution and ensures that MPP remains flexible and extensible.
+
+#### **Implementation:**
+```cpp
+#include <iostream>
+#include <filesystem>
+#include <vector>
+
+void listCommands() {
+    std::vector<std::string> commands;
+    std::string commandDir = "/usr/local/mpp/commands/";
+
+    for (const auto &entry : std::filesystem::directory_iterator(commandDir)) {
+        if (entry.path().extension() == ".so") {
+            commands.push_back(entry.path().filename());
+        }
+    }
+
+    std::cout << "Available Commands:
+";
+    for (const auto& cmd : commands) {
+        std::cout << " - " << cmd << std::endl;
+    }
+}
+```
+
+#### **Test Considerations:**
+- **Command Discovery:** Ensure that `mpp --list-commands` correctly finds available `.so` commands.
+- **Test Setup:** Use a simulated command directory with a mix of valid and invalid `.so` files.
+- **Edge Cases:** Handle missing directories, unreadable files, and empty command lists.
+
+---
+
+## **7. Test & Verification Plan**
+
+### **7.1 Unit & Integration Testing**
+- [ ] Unit tests for `mpp --list-commands` and `mpp --check-capabilities`.
+- [ ] Integration testing for dynamic plugin loading.
+- [ ] Benchmark IPC performance.
+- [ ] Ensure command pipeline validation functions correctly.
+
+### **7.2 Test Setup & Execution**
+- **Test Harness:** Automated test cases for command execution and validation.
+- **Performance Testing:** Measure and optimize IPC and command execution speed.
+- **Validation Reports:** Log all test results for future reference.
+
+---
+
+## **8. Development Priorities**
+- [ ] Implement `CommandInvoker` for executing user-defined commands.
+- [ ] Implement `PluginManager` for managing plugins.
+- [ ] Implement IPC abstraction via `IPCManager`.
+
+---
+
+## **9. UML Diagrams**
+
+### **9.1 Class Diagram for Command Execution**
+
+This diagram represents how MPP executes commands using the `CommandInvoker` and `ICommand` interface.
+
+```puml
+@startuml
+interface ICommand {
+    +execute(input: istream, output: ostream)
+    +getCapabilities(): string
+}
+
+class CommandInvoker {
+    - ICommand command
+    +CommandInvoker(cmd: ICommand)
+    +execute(input: istream, output: ostream)
+}
+
+CommandInvoker --> ICommand : Uses
+@enduml
+```
+
+### **9.2 Component Diagram for Plugin System**
+
+This diagram illustrates how plugins are loaded and executed by the `PluginManager`.
+
+```puml
+@startuml
+component "MPP Framework" as MPP
+component "Plugin System" as PluginSystem
+component "User Plugin (.so)" as Plugin
+
+MPP --> PluginSystem : Manages
+PluginSystem --> Plugin : Loads & Executes
+@enduml
+
+```
+
+### **9.3 Sequence Diagram for IPC Messaging**
+
+This sequence diagram represents how MPP components communicate using IPC mechanisms.
+
+```puml
+@startuml
+participant "Component A" as A
+participant "IPCManager" as IPC
+participant "Component B" as B
+
+A -> IPC : sendMessage("data")
+IPC -> B : deliverMessage("data")
+B -> IPC : acknowledge()
+IPC -> A : confirmReceipt()
+@enduml
+```
+
+These diagrams provide a structured view of MPP’s execution flow, plugin management, and inter-process communication.
+
+---
+
+## **10. Change Log & Future Enhancements**
 
